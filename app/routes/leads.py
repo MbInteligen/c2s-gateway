@@ -1,0 +1,164 @@
+"""
+Lead management routes
+"""
+
+from typing import Optional
+
+from fastapi import APIRouter, HTTPException, Query
+
+from app.core.client import c2s_client
+from app.models.schemas import (
+    ActivityCreate,
+    DoneDeal,
+    LeadCreate,
+    LeadForward,
+    LeadTagCreate,
+    LeadUpdate,
+    MessageCreate,
+    VisitCreate,
+)
+
+router = APIRouter(prefix="/leads", tags=["Leads"])
+
+
+@router.get("")
+async def list_leads(
+    page: int = Query(default=1, ge=1),
+    perpage: int = Query(default=50, ge=1, le=50),
+    sort: Optional[str] = Query(
+        None, description="Sort: -created_at, created_at, -updated_at, updated_at"
+    ),
+    created_gte: Optional[str] = Query(None, description="Created >= (ISO 8601)"),
+    created_lt: Optional[str] = Query(None, description="Created < (ISO 8601)"),
+    updated_gte: Optional[str] = Query(None, description="Updated >= (ISO 8601)"),
+    updated_lt: Optional[str] = Query(None, description="Updated < (ISO 8601)"),
+    status: Optional[str] = Query(None, description="Status filter"),
+    phone: Optional[str] = None,
+    email: Optional[str] = None,
+    tags: Optional[str] = None,
+):
+    """
+    List leads with filtering and pagination
+
+    Status options: novo, em_negociacao, convertido, negocio_fechado,
+                   arquivado, resgatado, pendente, recusado, finalizado
+    """
+    try:
+        return await c2s_client.get_leads(
+            page=page,
+            perpage=perpage,
+            sort=sort,
+            created_gte=created_gte,
+            created_lt=created_lt,
+            updated_gte=updated_gte,
+            updated_lt=updated_lt,
+            status=status,
+            phone=phone,
+            email=email,
+            tags=tags,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{lead_id}")
+async def get_lead(lead_id: str):
+    """Get specific lead details"""
+    try:
+        return await c2s_client.get_lead(lead_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("")
+async def create_lead(lead: LeadCreate):
+    """Create new lead"""
+    try:
+        return await c2s_client.create_lead(lead.model_dump(exclude_none=True))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/{lead_id}")
+async def update_lead(lead_id: str, lead: LeadUpdate):
+    """Update lead information"""
+    try:
+        return await c2s_client.update_lead(lead_id, lead.model_dump(exclude_none=True))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/{lead_id}/forward")
+async def forward_lead(lead_id: str, data: LeadForward):
+    """Transfer lead to another seller"""
+    try:
+        return await c2s_client.forward_lead(lead_id, data.seller_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{lead_id}/tags")
+async def get_lead_tags(lead_id: str):
+    """Get tags associated with lead"""
+    try:
+        return await c2s_client.get_lead_tags(lead_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{lead_id}/tags")
+async def create_lead_tag(lead_id: str, data: LeadTagCreate):
+    """Associate tag with lead"""
+    try:
+        return await c2s_client.create_lead_tag(lead_id, data.tag_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{lead_id}/mark-interacted")
+async def mark_as_interacted(lead_id: str):
+    """Mark lead as interacted"""
+    try:
+        return await c2s_client.mark_lead_as_interacted(lead_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{lead_id}/messages")
+async def create_message(lead_id: str, message: MessageCreate):
+    """Add message to lead"""
+    try:
+        return await c2s_client.create_message(lead_id, message.message, message.type)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{lead_id}/visits")
+async def create_visit(lead_id: str, visit: VisitCreate):
+    """Schedule visit for lead"""
+    try:
+        return await c2s_client.create_visit(
+            lead_id, visit.visit_date, visit.description
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{lead_id}/activities")
+async def create_activity(lead_id: str, activity: ActivityCreate):
+    """Log activity for lead"""
+    try:
+        return await c2s_client.create_activity(
+            lead_id, activity.type, activity.description, activity.date
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{lead_id}/done-deal")
+async def mark_done_deal(lead_id: str, deal: DoneDeal):
+    """Mark lead as closed deal"""
+    try:
+        return await c2s_client.mark_done_deal(lead_id, deal.value, deal.description)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

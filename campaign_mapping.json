@@ -1,0 +1,40 @@
+{
+  "google_ads_campaigns": {
+    "22866487607": {
+      "campaign_name": "MBRAS - LUX 600",
+      "campaign_type": "SEARCH",
+      "property": {
+        "description": "Vila Nova Conceição - Lux 400+m²",
+        "prop_ref": "400",
+        "neighbourhood": "Vila Nova Conceição",
+        "city": "São Paulo",
+        "price": "15000000",
+        "price_display": "R$ 15.000.000 - R$ 20.000.000"
+      },
+      "lead_source": {
+        "id": 493,
+        "name": "Google Ads - LUX 600"
+      },
+      "product_details": {
+        "type": "Apartamento",
+        "area": "397-859m²",
+        "bedrooms": "4 suítes",
+        "parking": "5-8 vagas",
+        "features": [
+          "Vista ininterrupta Parque Ibirapuera",
+          "Assinatura Bernardes Arquitetura",
+          "Paisagismo Burle Marx",
+          "180° vista panorâmica"
+        ],
+        "building_name": "LUX 600"
+      },
+      "message_template": "Origem: Google Ads Lead Form\nCampanha: MBRAS - LUX 600\nImóvel: {building_name}\nLocalização: {neighbourhood}\nTamanho: {area}\nQuartos: {bedrooms}\nPreço: {price_display}"
+    }
+  },
+  "default_lead_source": {
+    "id": 493,
+    "name": "Site"
+  },
+  "mapping_version": "1.0",
+  "last_updated": "2025-11-20"
+}
