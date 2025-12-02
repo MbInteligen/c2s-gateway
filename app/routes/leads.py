@@ -162,3 +162,59 @@ async def mark_done_deal(lead_id: str, deal: DoneDeal):
         return await c2s_client.mark_done_deal(lead_id, deal.value, deal.description)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# RESOLVE SOURCE - Proxy to ibvi-ads-gateway for ad group name resolution
+# =============================================================================
+
+import httpx
+
+IBVI_ADS_GATEWAY_URL = "https://ibvi-ads-gateway.fly.dev"
+
+
+@router.get("/resolve-source")
+async def resolve_lead_source(
+    form_id: Optional[str] = Query(None, description="Google Ads Lead Form ID"),
+    ad_group_id: Optional[str] = Query(None, description="Google Ads Ad Group ID"),
+    campaign_id: Optional[str] = Query(None, description="Google Ads Campaign ID"),
+    google_lead_id: Optional[str] = Query(None, description="Google Ads Lead ID (hash)"),
+):
+    """
+    Resolve form_id/ad_group_id to human-readable names.
+    
+    Proxies to ibvi-ads-gateway which has Google Ads API access.
+    
+    Used by mbras-c2s to get proper product.description for leads.
+    
+    Returns:
+    {
+        "ad_group_id": "187145758017",
+        "ad_group_name": "Casa Jardim Europa - Condomínio",
+        "campaign_name": "Campanha Stoc MBRAS 2025",
+        "form_headline": "Casas em Condomínio SP",
+        "product_description": "Casa Jardim Europa - Condomínio"
+    }
+    """
+    try:
+        params = {}
+        if form_id:
+            params["form_id"] = form_id
+        if ad_group_id:
+            params["ad_group_id"] = ad_group_id
+        if campaign_id:
+            params["campaign_id"] = campaign_id
+        if google_lead_id:
+            params["google_lead_id"] = google_lead_id
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{IBVI_ADS_GATEWAY_URL}/v1/leads/resolve-source",
+                params=params,
+            )
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"Error calling ibvi-ads-gateway: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
